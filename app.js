@@ -946,7 +946,7 @@ window.handleAdminLogin = function() {
     showToast('Berhasil masuk sebagai Admin! 🌸');
     showAdminDashboard();
   } else {
-    showToast('PIN Admin salah! (Gunakan default: 1234)');
+    showToast('PIN Admin salah! Silakan coba lagi.');
     if (pinInput) {
       pinInput.value = '';
       pinInput.focus();
