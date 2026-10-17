@@ -3,10 +3,7 @@
  * Florist • Gift • Craft • Coffee
  */
 
-// ==========================================
-// 1. DATA: PRODUCT CATALOG
-// ==========================================
-const PRODUCTS = [
+const DEFAULT_PRODUCTS = [
   // FLORIST
   {
     id: 'f1',
@@ -208,6 +205,22 @@ const PRODUCTS = [
   }
 ];
 
+// Helper to get or initialize dynamic products
+function getStoredProducts() {
+  const stored = localStorage.getItem('dy_florist_custom_products');
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      console.error('Error parsing custom products:', e);
+    }
+  }
+  return [...DEFAULT_PRODUCTS];
+}
+
+let PRODUCTS = getStoredProducts();
+let ordersLog = JSON.parse(localStorage.getItem('dy_florist_orders_log')) || [];
+
 // WhatsApp Official Numbers
 const WA_PHONE_NUMBER = '6288267108077'; // Pesan via WhatsApp
 const WA_CS_NUMBER = '6287871897450';    // Layanan Pelanggan
@@ -247,6 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupFAQ();
   setupHeaderScroll();
   setupMobileMenu();
+  setupAdmin();
   updateCartBadge();
 });
 
@@ -691,6 +705,19 @@ function checkoutCartWhatsApp() {
                `*Pesan Kartu Ucapan:*\n"${note}"\n\n` +
                `Halo Florist dy.florist, saya ingin konfirmasi pesanan ini. Mohon info nomor rekening & ketersediaan. Terima kasih! ✨`;
 
+  // Save order to Admin Orders Log
+  const newOrder = {
+    id: 'ord-' + Date.now(),
+    date: new Date().toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }),
+    recipient: recipient,
+    scheduled: date,
+    note: note,
+    total: subtotal,
+    items: cart.map(i => ({ name: i.name, qty: i.quantity, price: i.price }))
+  };
+  ordersLog.unshift(newOrder);
+  localStorage.setItem('dy_florist_orders_log', JSON.stringify(ordersLog));
+
   const waUrl = `https://wa.me/${WA_PHONE_NUMBER}?text=${encodeURIComponent(text)}`;
   window.open(waUrl, '_blank');
 }
@@ -835,3 +862,318 @@ function showToast(message) {
     setTimeout(() => toast.remove(), 300);
   }, 3200);
 }
+
+// ==========================================
+// 11. ADMIN PORTAL & CRUD OPERATIONS
+// ==========================================
+const ADMIN_SECRET_PIN = '1234';
+let isAdminLoggedIn = sessionStorage.getItem('dy_florist_admin_auth') === 'true';
+
+function setupAdmin() {
+  const openBtn = document.getElementById('openAdminBtn');
+  const closeBtn = document.getElementById('closeAdminBtn');
+  const overlay = document.getElementById('adminModalOverlay');
+
+  if (openBtn) {
+    openBtn.addEventListener('click', openAdminModal);
+  }
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeAdminModal);
+  }
+  if (overlay) {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeAdminModal();
+    });
+  }
+}
+
+window.openAdminModal = function() {
+  const overlay = document.getElementById('adminModalOverlay');
+  if (!overlay) return;
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  if (isAdminLoggedIn) {
+    showAdminDashboard();
+  } else {
+    showAdminLogin();
+  }
+};
+
+window.closeAdminModal = function() {
+  const overlay = document.getElementById('adminModalOverlay');
+  if (overlay) overlay.classList.remove('open');
+  document.body.style.overflow = '';
+};
+
+function showAdminLogin() {
+  const loginView = document.getElementById('adminLoginView');
+  const dashView = document.getElementById('adminDashboardView');
+  const headerTitle = document.getElementById('adminHeaderTitle');
+
+  if (loginView) loginView.style.display = 'block';
+  if (dashView) dashView.style.display = 'none';
+  if (headerTitle) headerTitle.innerText = 'Admin Authentication';
+
+  const pinInput = document.getElementById('adminPinInput');
+  if (pinInput) {
+    pinInput.value = '';
+    setTimeout(() => pinInput.focus(), 150);
+  }
+}
+
+function showAdminDashboard() {
+  const loginView = document.getElementById('adminLoginView');
+  const dashView = document.getElementById('adminDashboardView');
+  const headerTitle = document.getElementById('adminHeaderTitle');
+
+  if (loginView) loginView.style.display = 'none';
+  if (dashView) dashView.style.display = 'block';
+  if (headerTitle) headerTitle.innerText = 'Admin Control Center';
+
+  renderAdminProductsTable();
+  renderAdminOrdersTable();
+  updateAdminBadges();
+}
+
+window.handleAdminLogin = function() {
+  const pinInput = document.getElementById('adminPinInput');
+  const pin = pinInput?.value.trim();
+
+  if (pin === ADMIN_SECRET_PIN) {
+    isAdminLoggedIn = true;
+    sessionStorage.setItem('dy_florist_admin_auth', 'true');
+    showToast('Berhasil masuk sebagai Admin! 🌸');
+    showAdminDashboard();
+  } else {
+    showToast('PIN Admin salah! (Gunakan default: 1234)');
+    if (pinInput) {
+      pinInput.value = '';
+      pinInput.focus();
+    }
+  }
+};
+
+window.handleAdminLogout = function() {
+  isAdminLoggedIn = false;
+  sessionStorage.removeItem('dy_florist_admin_auth');
+  showToast('Anda telah keluar dari mode Admin.');
+  showAdminLogin();
+};
+
+window.switchAdminTab = function(tabName) {
+  const tabs = document.querySelectorAll('.admin-tab');
+  tabs.forEach(t => t.classList.toggle('active', t.getAttribute('data-tab') === tabName));
+
+  const contentProducts = document.getElementById('adminTabProducts');
+  const contentAdd = document.getElementById('adminTabAdd');
+  const contentOrders = document.getElementById('adminTabOrders');
+
+  if (contentProducts) contentProducts.style.display = (tabName === 'products') ? 'block' : 'none';
+  if (contentAdd) contentAdd.style.display = (tabName === 'add') ? 'block' : 'none';
+  if (contentOrders) contentOrders.style.display = (tabName === 'orders') ? 'block' : 'none';
+
+  if (tabName === 'products') {
+    renderAdminProductsTable();
+  } else if (tabName === 'orders') {
+    renderAdminOrdersTable();
+  }
+};
+
+function updateAdminBadges() {
+  const totalCountEl = document.getElementById('adminTotalCount');
+  const ordersCountEl = document.getElementById('adminOrdersCount');
+
+  if (totalCountEl) totalCountEl.innerText = PRODUCTS.length;
+  if (ordersCountEl) ordersCountEl.innerText = ordersLog.length;
+}
+
+window.renderAdminProductsTable = function() {
+  const tbody = document.getElementById('adminProductsTableBody');
+  if (!tbody) return;
+
+  const searchQuery = document.getElementById('adminSearchInput')?.value.toLowerCase().trim() || '';
+  const filterCat = document.getElementById('adminCategoryFilter')?.value || 'all';
+
+  const filtered = PRODUCTS.filter(p => {
+    const matchName = p.name.toLowerCase().includes(searchQuery);
+    const matchCat = (filterCat === 'all' || p.category === filterCat);
+    return matchName && matchCat;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 24px; color: var(--color-text-muted);">Tidak ada produk ditemukan.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(item => `
+    <tr>
+      <td>
+        <img src="${item.image}" alt="${item.name}" onerror="this.src='./assets/bouquet.jpg'">
+      </td>
+      <td>
+        <strong>${item.name}</strong>
+        <div style="font-size: 0.75rem; color: var(--color-text-muted); max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+          ${item.description || ''}
+        </div>
+      </td>
+      <td><span class="category-tag" style="text-transform: capitalize;">${item.categoryName || item.category}</span></td>
+      <td style="font-weight: 600; color: var(--color-primary);">${formatIDR(item.price)}</td>
+      <td>
+        ${item.badge ? `<span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; background: var(--color-primary-soft); color: var(--color-primary); font-weight: 600;">${item.badge}</span>` : '-'}
+      </td>
+      <td>
+        <button class="btn-action-edit" onclick="startEditProduct('${item.id}')">Edit</button>
+        <button class="btn-action-delete" onclick="deleteProduct('${item.id}')">Hapus</button>
+      </td>
+    </tr>
+  `).join('');
+};
+
+window.filterAdminProducts = function() {
+  renderAdminProductsTable();
+};
+
+window.startEditProduct = function(id) {
+  const item = PRODUCTS.find(p => p.id === id);
+  if (!item) return;
+
+  document.getElementById('editProductId').value = item.id;
+  document.getElementById('prodName').value = item.name;
+  document.getElementById('prodCategory').value = item.category;
+  document.getElementById('prodPrice').value = item.price;
+  document.getElementById('prodBadge').value = item.badge || '';
+  document.getElementById('prodImage').value = item.image;
+  document.getElementById('prodDescription').value = item.description || '';
+
+  document.getElementById('saveBtnText').innerText = 'Simpan Perubahan';
+  switchAdminTab('add');
+};
+
+window.cancelEditProduct = function() {
+  document.getElementById('adminProductForm')?.reset();
+  document.getElementById('editProductId').value = '';
+  document.getElementById('saveBtnText').innerText = 'Simpan Produk';
+  switchAdminTab('products');
+};
+
+const CATEGORY_NAMES = {
+  florist: 'Florist',
+  gift: 'Gift & Hampers',
+  craft: 'Craft & Preserved',
+  coffee: 'Cafe & Treats'
+};
+
+window.saveAdminProduct = function() {
+  const id = document.getElementById('editProductId').value;
+  const name = document.getElementById('prodName').value.trim();
+  const category = document.getElementById('prodCategory').value;
+  const price = parseInt(document.getElementById('prodPrice').value, 10);
+  const badge = document.getElementById('prodBadge').value.trim();
+  const image = document.getElementById('prodImage').value.trim();
+  const description = document.getElementById('prodDescription').value.trim();
+
+  if (id) {
+    // Edit existing product
+    const idx = PRODUCTS.findIndex(p => p.id === id);
+    if (idx !== -1) {
+      PRODUCTS[idx] = {
+        ...PRODUCTS[idx],
+        name,
+        category,
+        categoryName: CATEGORY_NAMES[category] || category,
+        price,
+        badge,
+        image,
+        description
+      };
+      showToast(`Produk "${name}" berhasil diperbarui! ✨`);
+    }
+  } else {
+    // Add new product
+    const newProduct = {
+      id: 'prod_' + Date.now(),
+      name,
+      category,
+      categoryName: CATEGORY_NAMES[category] || category,
+      price,
+      rating: 5.0,
+      reviews: 1,
+      badge: badge || 'New Arrival',
+      image,
+      description
+    };
+    PRODUCTS.unshift(newProduct);
+    showToast(`Produk baru "${name}" berhasil ditambahkan! 🌸`);
+  }
+
+  // Persist to local storage
+  localStorage.setItem('dy_florist_custom_products', JSON.stringify(PRODUCTS));
+  
+  // Re-render both admin table and main customer catalog
+  renderAdminProductsTable();
+  renderCatalog();
+  updateAdminBadges();
+  cancelEditProduct();
+};
+
+window.deleteProduct = function(id) {
+  const item = PRODUCTS.find(p => p.id === id);
+  if (!item) return;
+
+  if (confirm(`Yakin ingin menghapus produk "${item.name}" dari katalog?`)) {
+    PRODUCTS = PRODUCTS.filter(p => p.id !== id);
+    localStorage.setItem('dy_florist_custom_products', JSON.stringify(PRODUCTS));
+    renderAdminProductsTable();
+    renderCatalog();
+    updateAdminBadges();
+    showToast(`Produk "${item.name}" telah dihapus.`);
+  }
+};
+
+window.resetProductsToDefault = function() {
+  if (confirm('Apakah Anda yakin ingin mereset seluruh katalog kembali ke produk default awal? Semua produk baru / editan akan dihapus.')) {
+    PRODUCTS = [...DEFAULT_PRODUCTS];
+    localStorage.removeItem('dy_florist_custom_products');
+    renderAdminProductsTable();
+    renderCatalog();
+    updateAdminBadges();
+    showToast('Katalog telah di-reset ke pengaturan awal.');
+  }
+};
+
+window.renderAdminOrdersTable = function() {
+  const tbody = document.getElementById('adminOrdersTableBody');
+  if (!tbody) return;
+
+  if (ordersLog.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 24px; color: var(--color-text-muted);">Belum ada riwayat pesanan yang masuk melalui WhatsApp checkout.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = ordersLog.map(ord => `
+    <tr>
+      <td style="white-space: nowrap; font-size: 0.78rem;">${ord.date}</td>
+      <td><strong>${ord.recipient}</strong></td>
+      <td style="font-size: 0.8rem;">${ord.scheduled}</td>
+      <td style="font-weight: 700; color: var(--color-primary);">${formatIDR(ord.total)}</td>
+      <td style="font-size: 0.8rem;">
+        <ul style="padding-left: 16px; margin: 0;">
+          ${ord.items.map(it => `<li>${it.name} (x${it.qty})</li>`).join('')}
+        </ul>
+      </td>
+      <td style="font-size: 0.78rem; max-width: 160px; font-style: italic; color: var(--color-text-muted);">${ord.note || '-'}</td>
+    </tr>
+  `).join('');
+};
+
+window.clearOrdersLog = function() {
+  if (confirm('Hapus seluruh riwayat pesanan?')) {
+    ordersLog = [];
+    localStorage.removeItem('dy_florist_orders_log');
+    renderAdminOrdersTable();
+    updateAdminBadges();
+    showToast('Riwayat pesanan berhasil dibersihkan.');
+  }
+};
+

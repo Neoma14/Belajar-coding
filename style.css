@@ -2187,3 +2187,352 @@ button {
     width: 100%;
   }
 }
+
+/* ==========================================================================
+   Admin Portal & Management Dashboard Styles
+   ========================================================================== */
+.admin-portal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-smooth);
+}
+
+.admin-portal-btn:hover {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.admin-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 22, 24, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.admin-modal-overlay.open {
+  display: flex;
+}
+
+.admin-modal-container {
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 960px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+  animation: adminModalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes adminModalPop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.admin-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 28px;
+  background: linear-gradient(135deg, #FFF0F6 0%, #FFFFFF 100%);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.admin-badge-tag {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-primary);
+  background: rgba(228, 0, 127, 0.1);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  margin-bottom: 4px;
+}
+
+.admin-modal-header h2 {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  color: var(--color-text-main);
+  margin: 0;
+}
+
+.admin-view {
+  padding: 24px 28px;
+  overflow-y: auto;
+  max-height: calc(90vh - 80px);
+}
+
+/* Login Card */
+.admin-login-card {
+  max-width: 420px;
+  margin: 40px auto;
+  text-align: center;
+  background: var(--color-bg-base);
+  border: 1px solid var(--border-subtle);
+  padding: 36px 30px;
+  border-radius: var(--radius-md);
+}
+
+.admin-login-icon {
+  font-size: 2.8rem;
+  margin-bottom: 12px;
+}
+
+.admin-login-card h3 {
+  font-size: 1.3rem;
+  margin-bottom: 8px;
+}
+
+.admin-login-desc {
+  font-size: 0.88rem;
+  color: var(--color-text-muted);
+  margin-bottom: 24px;
+}
+
+.admin-login-card .form-group {
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.admin-login-card label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--color-text-main);
+}
+
+.admin-login-card input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--color-bg-surface);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  transition: var(--transition-smooth);
+}
+
+.admin-login-card input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(228, 0, 127, 0.12);
+}
+
+/* Dashboard Tabs */
+.admin-nav-tabs {
+  display: flex;
+  gap: 10px;
+  border-bottom: 2px solid var(--border-subtle);
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.admin-tab {
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-bg-subtle);
+  transition: var(--transition-smooth);
+}
+
+.admin-tab:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.admin-tab.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.admin-nav-spacer {
+  flex-grow: 1;
+}
+
+.btn-logout {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #D32F2F;
+  background: #FFEBEE;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  transition: var(--transition-smooth);
+}
+
+.btn-logout:hover {
+  background: #FFCDD2;
+}
+
+/* Toolbar */
+.admin-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.admin-toolbar input,
+.admin-toolbar select {
+  padding: 9px 14px;
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-surface);
+  font-size: 0.88rem;
+}
+
+.admin-toolbar input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.admin-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-surface);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.admin-table th {
+  background: var(--color-bg-subtle);
+  padding: 12px 16px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.admin-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+.admin-table tr:hover {
+  background: #FFFDFE;
+}
+
+.admin-table img {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-xs);
+  object-fit: cover;
+}
+
+.btn-action-edit,
+.btn-action-delete {
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: var(--radius-xs);
+  margin-right: 6px;
+}
+
+.btn-action-edit {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.btn-action-edit:hover {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.btn-action-delete {
+  background: #FFEBEE;
+  color: #C62828;
+}
+
+.btn-action-delete:hover {
+  background: #C62828;
+  color: #fff;
+}
+
+/* Product Form Grid */
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  background: var(--color-bg-base);
+  padding: 24px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.admin-form-grid .full-width {
+  grid-column: 1 / -1;
+}
+
+.admin-form-grid label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--color-text-main);
+}
+
+.admin-form-grid input,
+.admin-form-grid select,
+.admin-form-grid textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-surface);
+  font-size: 0.9rem;
+}
+
+.admin-form-grid input:focus,
+.admin-form-grid select:focus,
+.admin-form-grid textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(228, 0, 127, 0.1);
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.admin-orders-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+

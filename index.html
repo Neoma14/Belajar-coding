@@ -52,6 +52,13 @@
           <span class="cart-badge" id="cartCountBadge">0</span>
         </button>
 
+        <button class="admin-portal-btn" id="openAdminBtn" title="Admin Portal / Login" aria-label="Admin Portal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 5a3 3 0 0 1 6 0v3H9V7zm3 8a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/>
+          </svg>
+          <span>Admin</span>
+        </button>
+
         <a href="https://wa.me/6288267108077?text=Halo%20dy.florist,%20saya%20ingin%20konsultasi%20pemesanan%20bunga" target="_blank" rel="noopener noreferrer" class="btn btn-primary header-wa-btn">
           <span>Chat WhatsApp</span>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -662,7 +669,7 @@
           <li><a href="#faq">FAQ & Tanya Jawab</a></li>
           <li><a href="#contact">Petunjuk Lokasi Toko</a></li>
           <li><a href="https://wa.me/6288267108077" target="_blank">Corporate & Event Order</a></li>
-          <li><a href="https://wa.me/6287871897450" target="_blank">Florist Workshop Class</a></li>
+          <li><a href="javascript:void(0)" onclick="openAdminModal()">🔑 Portal Admin Toko</a></li>
         </ul>
       </div>
 
@@ -743,6 +750,151 @@
       <button class="modal-close-btn" id="closeQuickViewBtn">&times;</button>
       <div class="modal-body" id="quickViewBody">
         <!-- Content injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Portal Modal & Dashboard -->
+  <div class="modal-overlay admin-modal-overlay" id="adminModalOverlay">
+    <div class="admin-modal-container" id="adminModalContainer">
+      <div class="admin-modal-header">
+        <div class="admin-title-wrap">
+          <span class="admin-badge-tag">dy.florist Management</span>
+          <h2 id="adminHeaderTitle">Admin Control Center</h2>
+        </div>
+        <button class="modal-close-btn" id="closeAdminBtn" aria-label="Tutup Admin Modal">&times;</button>
+      </div>
+
+      <!-- Login Screen View -->
+      <div class="admin-view" id="adminLoginView">
+        <div class="admin-login-card">
+          <div class="admin-login-icon">🔐</div>
+          <h3>Masuk Dashboard Admin</h3>
+          <p class="admin-login-desc">Masukkan PIN / Kata Sandi Admin untuk mengelola katalog produk, harga, dan melihat pesanan.</p>
+          <form id="adminLoginForm" onsubmit="event.preventDefault(); handleAdminLogin();">
+            <div class="form-group">
+              <label for="adminPinInput">PIN Admin (Default: <code>1234</code>):</label>
+              <input type="password" id="adminPinInput" placeholder="Ketik 1234..." required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">
+              <span>Buka Dashboard Admin</span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Dashboard View (Shown after authentication) -->
+      <div class="admin-view" id="adminDashboardView" style="display: none;">
+        <div class="admin-nav-tabs">
+          <button class="admin-tab active" data-tab="products" onclick="switchAdminTab('products')">📦 Kelola Produk (<span id="adminTotalCount">0</span>)</button>
+          <button class="admin-tab" data-tab="add" onclick="switchAdminTab('add')">➕ Tambah Produk Baru</button>
+          <button class="admin-tab" data-tab="orders" onclick="switchAdminTab('orders')">📋 Riwayat Order (<span id="adminOrdersCount">0</span>)</button>
+          <div class="admin-nav-spacer"></div>
+          <button class="btn-logout" onclick="handleAdminLogout()">Keluar 🚪</button>
+        </div>
+
+        <div class="admin-tab-content" id="adminTabProducts">
+          <div class="admin-toolbar">
+            <input type="text" id="adminSearchInput" placeholder="Cari nama produk..." oninput="filterAdminProducts()">
+            <select id="adminCategoryFilter" onchange="filterAdminProducts()">
+              <option value="all">Semua Kategori</option>
+              <option value="florist">Florist</option>
+              <option value="gift">Gift Hampers</option>
+              <option value="craft">Craft & Preserved</option>
+              <option value="coffee">Cafe & Coffee</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="resetProductsToDefault()">↺ Reset ke Katalog Awal</button>
+          </div>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Gambar</th>
+                  <th>Nama Produk</th>
+                  <th>Kategori</th>
+                  <th>Harga (IDR)</th>
+                  <th>Badge</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="adminProductsTableBody">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-tab-content" id="adminTabAdd" style="display: none;">
+          <form id="adminProductForm" onsubmit="event.preventDefault(); saveAdminProduct();" class="admin-form-grid">
+            <input type="hidden" id="editProductId" value="">
+            
+            <div class="form-group full-width">
+              <label for="prodName">Nama Produk *</label>
+              <input type="text" id="prodName" required placeholder="Contoh: Whispering Rose Elegance Bouquet">
+            </div>
+
+            <div class="form-group">
+              <label for="prodCategory">Kategori *</label>
+              <select id="prodCategory" required>
+                <option value="florist">Florist (Bunga Segar)</option>
+                <option value="gift">Gift & Hampers</option>
+                <option value="craft">Craft & Preserved Flowers</option>
+                <option value="coffee">Cafe & Coffee Treats</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="prodPrice">Harga (IDR) *</label>
+              <input type="number" id="prodPrice" required min="1000" step="1000" placeholder="Contoh: 350000">
+            </div>
+
+            <div class="form-group">
+              <label for="prodBadge">Badge Label (Opsional)</label>
+              <input type="text" id="prodBadge" placeholder="Contoh: Best Seller, New, Signature">
+            </div>
+
+            <div class="form-group">
+              <label for="prodImage">URL Gambar / Path Lokal *</label>
+              <input type="text" id="prodImage" required placeholder="./assets/bouquet.jpg atau https://images.unsplash.com/...">
+            </div>
+
+            <div class="form-group full-width">
+              <label for="prodDescription">Deskripsi Produk *</label>
+              <textarea id="prodDescription" rows="3" required placeholder="Penjelasan rangkaian bunga, aksen wrapping, atau detail menu..."></textarea>
+            </div>
+
+            <div class="form-actions full-width">
+              <button type="submit" class="btn btn-primary" id="btnSaveProduct">
+                <span id="saveBtnText">Simpan Produk</span>
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="cancelEditProduct()">Batal</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="admin-tab-content" id="adminTabOrders" style="display: none;">
+          <div class="admin-orders-header">
+            <h4>Riwayat Transaksi WhatsApp Pelanggan</h4>
+            <button class="btn btn-secondary btn-sm" onclick="clearOrdersLog()">Hapus Riwayat</button>
+          </div>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Waktu</th>
+                  <th>Penerima</th>
+                  <th>Jadwal Kirim</th>
+                  <th>Total</th>
+                  <th>Item Pesanan</th>
+                  <th>Ucapan Kartu</th>
+                </tr>
+              </thead>
+              <tbody id="adminOrdersTableBody">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
